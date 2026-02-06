@@ -1,0 +1,98 @@
+name: Update Changelog
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - main
+
+jobs:
+  update-changelog:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+      issues: read
+      id-token: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Get current date
+        id: date
+        run: echo "today=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Run Claude to update changelog
+        id: claude-changelog
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            A pull request #${{ github.event.pull_request.number }} titled "${{ github.event.pull_request.title }}" has just been merged into main.
+            
+            Please update the CHANGELOG.md file with an appropriate entry for this change.
+            
+            ## Your Task
+            1. Run: `git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}`
+               to see the actual code changes
+            
+            2. Analyze what functionality changed (not just which files)
+            
+            3. Update CHANGELOG.md with the entry:
+              - If CHANGELOG.md doesn't exist, create it (Keep a Changelog format)
+              - Add under today's date section: ## ${{ steps.date.outputs.today }}
+              - Create today's section at the top if it doesn't exist
+              - Categorize under: ### Added, ### Changed, ### Fixed, ### Removed, ### Security, or ### Deprecated
+              - Write user-friendly description focusing on WHAT changed and user impact
+              - Include: (#${{ github.event.pull_request.number }})
+              - Be specific about functionality, not "updated file X"
+              - Keep it concise (1-2 lines)
+              - Match the style of existing entries if the changelog already exists
+            
+            
+            PR Details:
+            - Author: @${{ github.event.pull_request.user.login }}
+            - URL: ${{ github.event.pull_request.html_url }}
+
+            IMPORTANT: Only modify CHANGELOG.md - do not change any other files.
+
+      - name: Validate only CHANGELOG modified
+        id: validate
+        run: |
+          CHANGED_FILES=$(git diff --name-only)
+          
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No files were modified by Claude"
+            exit 1
+          fi
+          
+          if [ "$CHANGED_FILES" != "CHANGELOG.md" ]; then
+            echo "ERROR: Unexpected files were modified!"
+            echo ""
+            echo "Modified files:"
+            echo "$CHANGED_FILES"
+            echo ""
+            echo "Full diff:"
+            git diff
+            exit 1
+          fi
+          
+          echo "Validation passed: Only CHANGELOG.md was modified"
+          echo ""
+          echo "Changes preview:"
+          git diff CHANGELOG.md
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG for PR #${{ github.event.pull_request.number }} [skip ci]"
+          git push
+          echo "Changelog committed and pushed"
