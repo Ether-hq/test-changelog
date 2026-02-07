@@ -98,3 +98,4 @@ jobs:
           file_pattern: CHANGELOG.md
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
+          branch: ${{ github.event.pull_request.base.ref }} 
