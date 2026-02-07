@@ -32,7 +32,9 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          permissions: write
+          claude_args: |
+            --allowedTools "Read,Write,Edit,Bash(git diff:*,git log:*,git show:*)"
+            --disallowedTools "Bash(git commit:*,git push:*,git add:*)"
           prompt: |
             A pull request #${{ github.event.pull_request.number }} titled "${{ github.event.pull_request.title }}" has just been merged into main.
             
