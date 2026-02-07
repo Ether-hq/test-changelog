@@ -9,3 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - OAuth2 authentication service with support for Google and GitHub login providers (#9)
+
+### Fixed
+- Memory leak in background job processor by implementing automatic cleanup of completed tasks (#10)
