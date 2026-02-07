@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## 2026-02-07
 
 ### Added
+- API documentation with OAuth2 authentication guide (#11)
 - OAuth2 authentication service with support for Google and GitHub login providers (#9)
 
 ### Fixed
