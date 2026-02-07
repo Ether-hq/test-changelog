@@ -18,7 +18,7 @@ jobs:
     
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -90,14 +90,10 @@ jobs:
           echo "Changes preview:"
           git diff CHANGELOG.md
 
-      - name: Commit and push changes
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG for PR #${{ github.event.pull_request.number }} [skip ci]"
-          git push
-          echo "Changelog committed and pushed"
+        - name: Commit and push changes
+          uses: stefanzweifel/git-auto-commit-action@v7
+          with:
+            commit_message: "docs: update CHANGELOG for PR #${{ github.event.pull_request.number }} [skip ci]"
+            file_pattern: CHANGELOG.md
+            commit_user_name: github-actions[bot]
+            commit_user_email: github-actions[bot]@users.noreply.github.com
