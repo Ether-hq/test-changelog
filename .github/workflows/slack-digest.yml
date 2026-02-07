@@ -36,25 +36,19 @@ jobs:
             found { print }
           ' CHANGELOG.md > today_changes.txt
           
-          if [ -s today_changes.txt ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
-            
-            # Format for Slack
-            CHANGES=$(cat today_changes.txt)
-            
-            # Convert ### headers to *bold*
-            FORMATTED=$(echo "$CHANGES" | sed 's/^### \(.*\)/*\1*/g')
-            
-            # Convert PR references (#123) to links
-            FORMATTED=$(echo "$FORMATTED" | sed -E "s/#([0-9]+)/<https:\/\/github.com\/${{ github.repository }}\/pull\/\1|#\1>/g")
-            
-            echo "$FORMATTED" > formatted_changes.txt
-          else
+          if [ ! -s today_changes.txt ]; then
             echo "has_changes=false" >> $GITHUB_OUTPUT
-            echo "No changes for today"
             exit 0
           fi
-      
+          
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+          
+          # Format for Slack
+          cat today_changes.txt | \
+            sed 's/^### \(.*\)/*\1*/g' | \
+            sed -E 's| \(#([0-9]+)\)| <https://github.com/${{ github.repository }}/pull/\1\|#\1>|g' \
+            > formatted_changes.txt
+ 
       - name: Create Slack payload
         if: steps.extract.outputs.has_changes == 'true'
         run: |
